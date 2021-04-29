@@ -1,6 +1,7 @@
+from device import Device
 
 
-class Groups:
+class Group:
     def __init__(self, name, devices=[]):
         self.name = name
         self.devices = devices
