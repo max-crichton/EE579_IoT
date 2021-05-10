@@ -927,7 +927,7 @@
                     <item>output[20]</item>
                     <item>input_str</item>
                     <item>return_flag</item>
-                    <item></item>
+                    <item />
                 </expressions>
                 <col-names>
                     <item>Expression</item>

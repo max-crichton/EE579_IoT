@@ -2,7 +2,7 @@
 #include <string.h>
 
 void output_str(char *output);
-char input_str[100] = "";
+char input_str[255] = "";
 int return_flag = 0;    //Flag that describes the state of RX => 0 -> Unconfirmed, 1 -> Fail, 2 -> Success, 3 -> Timeout
 int count = 5;  //Seconds to wait until retransmission due to unconfirmation
 
@@ -44,16 +44,41 @@ int main(void)
   }
   return_flag = 0;                         //Reset flag
   
-  output_str("AT+MQTTUSERCFG=0,'host','port',1\r\n");   //Send => Try and connect to broker - insert parameters
+  output_str("AT+MQTTUSERCFG=0,1,'client_id','usr','pwd'\r\n");
   while(!(return_flag ==  2)){
     if(return_flag == 3 || return_flag == 1){
-      output_str("AT+MQTTUSERCFG=0,'host','port',1\r\n");
+      output_str("AT+MQTTUSERCFG=0,'client_id','usr','pwd'\r\n");
       TA0CTL &= ~MC_0;
       TA0CTL |= MC_1;
     }
     __bis_SR_register(LPM0_bits + GIE);       // Enter LPM0, interrupts enabled
   }
   return_flag = 0;
+  
+  output_str("AT+MQTTCONNCFG=0,1,0,CON,CON_DISCONNECT,1\r\n");   //Send => Try and connect to broker - insert parameters
+  while(!(return_flag ==  2)){
+    if(return_flag == 3 || return_flag == 1){
+      output_str("AT+MQTTCONNCFG=0,1,0,CON,CON_DISCONNECT...,1,0\r\n");
+      TA0CTL &= ~MC_0;
+      TA0CTL |= MC_1;
+    }
+    __bis_SR_register(LPM0_bits + GIE);       // Enter LPM0, interrupts enabled
+  }
+  return_flag = 0;
+  
+ output_str("AT+MQTTCONN=0,'host','port',1\r\n");  
+  while(!(return_flag ==  2)){
+    if(return_flag == 3 || return_flag == 1){
+      output_str("AT+MQTTCONN=0,'host','port',1\r\n");
+      TA0CTL &= ~MC_0;
+      TA0CTL |= MC_1;
+    }
+    __bis_SR_register(LPM0_bits + GIE);       // Enter LPM0, interrupts enabled
+  }
+  return_flag = 0;
+  
+  output_str("AT+MQTTSUB=0,CON/...,0\r\n"); 
+  
   __bis_SR_register(LPM0_bits + GIE);       // Enter LPM0, interrupts enabled
 }
 
@@ -74,6 +99,9 @@ __interrupt void USCI0RX_ISR(void)
     else if (!(strcmp(input_str,"OK"))){
       return_flag = 2;
       __bic_SR_register_on_exit(LPM0_bits);
+    }
+    else if (!strcmp(input_str,"MQTTSUBRECV:0,CON/...,12,CON_REQ_CMDS\r\n"))){
+      output_str("AT+MQTTPUB=0,CON,CON_CMDS...,0,0\r\n"); 
     }
     /*
     Other if statements for commands received  
